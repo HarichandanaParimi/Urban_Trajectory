@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="js/d3.layout.cloud.js"></script>
+  <script src="http://d3js.org/d3.v5.min.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+    }
+
+    /* Style for the tab */
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: #f1f1f1;
+    }
+
+    /* Style for the buttons inside the tab */
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+      font-size: 17px;
+    }
+
+    /* Change the background color of buttons on hover */
+    .tab button:hover {
+      background-color: #ddd;
+    }
+
+    /* active tablink style */
+    .tab button.active {
+      background-color: #ccc;
+    }
+
+    /* tab content class*/
+    .tabcontent {
+      display: none;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-top: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Visualizations</h2>
+  <p>Click on the buttons</p>
+
+  <div class="tab">
+    <button class="tablinks" onclick="openCity(event, 'London')">WordCloud</button>
+    <button class="tablinks" onclick="openCity(event, 'Paris')">SankeyDiagram</button>
+    <button class="tablinks" onclick="openCity(event, 'Tokyo')">Scatter-Matrix</button>
+  </div>
+
+  <div id="London" class="tabcontent">
+    <div id="cloud1">
+    </div>
+  </div>
+
+  <div id="Paris" class="tabcontent">
+    <!--SankeyDiagram -->
+    <iframe src="test2.html" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" style="width: 2000px; height: 2000px;" >
+    </iframe>
+  </div>
+
+  <div id="Tokyo" class="tabcontent">
+    <h3>Scatter-Matrix</h3>
+    <iframe src="scatter.html" name="targetframe" allowTransparency="true" scrolling="yes" frameborder="0" style="width: 1000px; height: 1000px;" >
+    </iframe>
+  </div>
+
+  <script>
+    function openCity(evt, cityName) {
+      var i, tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tabcontent");
+      for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("tablinks");
+      for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(cityName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+    var retrievedData = localStorage.getItem("result1");
+    var resultInCloud = JSON.parse(retrievedData);
+    console.log("we are in word cloud");
+    console.log(resultInCloud);
+    WordCloud(resultInCloud);
+    // word cloud
+function WordCloud(trips){
+	const rs={}
+	trips.forEach(trip=>{
+		trip.streetnames.forEach(st=>{
+			!(st in rs)?rs[st]={street:st,value:1}:rs[st].value+=1;
+		})
+	})
+
+  var storerskey=new Array();
+  console.log("start rs");
+  for (var key in rs) {
+    if (rs.hasOwnProperty(key)) {
+        if(rs[key].value < 60 || rs[key].value > 350) {
+          storerskey.push(key)
+        }
+    }
+}
+for (index = 0; index < storerskey.length; index++) {
+    console.log(storerskey[index]);
+    delete rs[storerskey[index]];
+}
+  console.log("end rs");
+  console.log(rs);
+	const sizeScale = d3.scaleLinear().domain(d3.extent(Object.values(rs),x=>x.value)).range([1,30])
+
+	var layout = d3.layout.cloud()
+		.size([500, 500])
+		.words(Object.values(rs))
+		.padding(5)
+		.rotate(function() { return Math.floor(Math.random() * 2) * 90; })
+		.font("Impact")
+		.fontSize(function(d) { return sizeScale(d.value); })
+		.on("end", draw);
+
+	layout.start();
+
+	function draw(words) {
+	  d3.select("#cloud1").append("svg")
+		  .attr("width", '100%')
+		  .attr("height", '60%')
+		  .attr('viewBox',`0 0 ${layout.size()[0]} ${layout.size()[1]}`)
+		.append("g")
+		  .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+		.selectAll("text")
+		  .data(words)
+		.enter().append("text")
+		  .style("font-size", function(d) { return sizeScale(d.value) + "px"; })
+		  .style("fill", function(d) { return d3.schemeDark2[Math.floor(sizeScale(d.value)/10)]; })
+		  .style('opacity',.8)
+		  .style("font-family", "Impact")
+		  .attr("text-anchor", "middle")
+		  .attr("transform", function(d) {
+			return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+		  })
+		  .text(function(d) { return d.street; });
+	}
+
+}
+  </script>
+
+</body>
+
+</html>
